@@ -1,0 +1,9 @@
+{
+  "appId": "com.sri.srisday",
+  "appName": "Sri's Day",
+  "webDir": "out",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  }
+}

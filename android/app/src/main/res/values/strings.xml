@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Sri\'s Day</string>
+    <string name="title_activity_main">Sri\'s Day</string>
+    <string name="package_name">com.sri.srisday</string>
+    <string name="custom_url_scheme">com.sri.srisday</string>
+</resources>
