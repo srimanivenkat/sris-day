@@ -42,8 +42,8 @@ import { db } from '@/lib/db';
 
 export default function SettingsPage() {
   const { theme, setTheme } = useUIStore();
-  const { user, isGuest, signInWithGoogle, signOut } = useAuthStore();
-  const { isSyncing, lastSyncAt, syncToGoogleDrive, syncFromGoogleDrive } = useSyncStore();
+  const { user, isGuest, signInWithGoogle, signOut, error: authError } = useAuthStore();
+  const { isSyncing, lastSyncAt, syncToGoogleDrive, syncFromGoogleDrive, syncError, syncSuccess } = useSyncStore();
   const { config, updateConfig } = useTimerStore();
 
   const [exportStatus, setExportStatus] = useState<string | null>(null);
@@ -130,7 +130,7 @@ export default function SettingsPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {isGuest ? (
+          {isGuest || !user ? (
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-medium">Guest Mode</p>
@@ -162,6 +162,12 @@ export default function SettingsPage() {
                 <LogOut className="h-4 w-4 mr-2" />
                 Sign Out
               </Button>
+            </div>
+          )}
+          {authError && (
+            <div className="flex items-center gap-2 text-sm text-destructive mt-3 p-2 bg-destructive/10 rounded-md">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>{authError}</span>
             </div>
           )}
         </CardContent>
@@ -428,6 +434,20 @@ export default function SettingsPage() {
                   Restore from Drive
                 </Button>
               </div>
+
+              {syncSuccess && (
+                <div className="flex items-center gap-2 text-sm text-green-500 p-2 bg-green-500/10 rounded-md">
+                  <CheckCircle className="h-4 w-4 shrink-0" />
+                  <span>{syncSuccess}</span>
+                </div>
+              )}
+
+              {syncError && (
+                <div className="flex items-center gap-2 text-sm text-destructive p-2 bg-destructive/10 rounded-md">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  <span>{syncError}</span>
+                </div>
+              )}
             </>
           )}
         </CardContent>
