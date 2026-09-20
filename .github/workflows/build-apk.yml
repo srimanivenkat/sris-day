@@ -23,15 +23,13 @@ jobs:
         run: npm ci
 
       - name: Build Static Web App
-        env:
-          NEXT_PUBLIC_GOOGLE_CLIENT_ID: 1064811829288-qss7tmnvc352cdomc4cf156064dl9b2g.apps.googleusercontent.com
         run: npm run build
 
       - name: Sync Capacitor Android
         run: npx cap sync android
 
       - name: Set up Java JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: '21'
