@@ -1,0 +1,199 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================
+   Sri's Day - Global Styles
+   shadcn/ui CSS variable theme system
+   ============================================ */
+
+@layer base {
+  /* Light theme colors */
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 235 75% 60%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 235 75% 60%;
+    --radius: 0.625rem;
+  }
+
+  /* Dark theme colors (default) */
+  .dark {
+    --background: 224 71% 4%;
+    --foreground: 213 31% 91%;
+    --card: 224 71% 4%;
+    --card-foreground: 213 31% 91%;
+    --popover: 224 71% 4%;
+    --popover-foreground: 213 31% 91%;
+    --primary: 235 75% 60%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 222.2 47.4% 11.2%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 223 47% 11%;
+    --muted-foreground: 215.4 16.3% 56.9%;
+    --accent: 216 34% 17%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 216 34% 17%;
+    --input: 216 34% 17%;
+    --ring: 235 75% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Custom scrollbar for dark theme */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/20 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/40;
+  }
+}
+
+@layer components {
+  /* Glass morphism card effect */
+  .glass-card {
+    @apply bg-card/50 backdrop-blur-lg border border-border/50 rounded-lg;
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-500;
+  }
+
+  /* Active nav indicator */
+  .nav-active {
+    @apply bg-primary/10 text-primary border-l-2 border-primary;
+  }
+
+  /* Task priority indicators */
+  .priority-high {
+    @apply border-l-4 border-l-red-500;
+  }
+  .priority-medium {
+    @apply border-l-4 border-l-yellow-500;
+  }
+  .priority-low {
+    @apply border-l-4 border-l-green-500;
+  }
+
+  /* Focus ring */
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+}
+
+@layer utilities {
+  /* Hide scrollbar but allow scrolling */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Animated gradient background */
+  .animate-gradient {
+    background-size: 200% 200%;
+    animation: gradient 3s ease infinite;
+  }
+
+  @keyframes gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+}
+
+/* TipTap rich text editor styles */
+.tiptap {
+  @apply outline-none min-h-[200px] p-4;
+}
+
+.tiptap p {
+  @apply mb-2;
+}
+
+.tiptap h1 {
+  @apply text-2xl font-bold mb-3;
+}
+
+.tiptap h2 {
+  @apply text-xl font-semibold mb-2;
+}
+
+.tiptap h3 {
+  @apply text-lg font-medium mb-2;
+}
+
+.tiptap ul {
+  @apply list-disc list-inside mb-2 space-y-1;
+}
+
+.tiptap ol {
+  @apply list-decimal list-inside mb-2 space-y-1;
+}
+
+.tiptap blockquote {
+  @apply border-l-4 border-primary/50 pl-4 italic text-muted-foreground mb-2;
+}
+
+.tiptap code {
+  @apply bg-muted px-1.5 py-0.5 rounded text-sm font-mono;
+}
+
+.tiptap pre {
+  @apply bg-muted p-4 rounded-lg mb-2 overflow-x-auto;
+}
+
+.tiptap pre code {
+  @apply bg-transparent p-0;
+}
+
+.tiptap .is-editor-empty:first-child::before {
+  @apply text-muted-foreground pointer-events-none float-left h-0;
+  content: attr(data-placeholder);
+}

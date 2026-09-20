@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <rect width="512" height="512" rx="96" fill="#4f46e5"/>
+  <circle cx="256" cy="220" r="80" fill="#fbbf24"/>
+  <g stroke="#fbbf24" stroke-width="12" stroke-linecap="round">
+    <line x1="256" y1="100" x2="256" y2="70"/>
+    <line x1="256" y1="340" x2="256" y2="370"/>
+    <line x1="136" y1="220" x2="106" y2="220"/>
+    <line x1="376" y1="220" x2="406" y2="220"/>
+    <line x1="171" y1="135" x2="150" y2="114"/>
+    <line x1="341" y1="305" x2="362" y2="326"/>
+    <line x1="341" y1="135" x2="362" y2="114"/>
+    <line x1="171" y1="305" x2="150" y2="326"/>
+  </g>
+  <text x="256" y="440" font-family="system-ui, sans-serif" font-weight="700" font-size="72" fill="white" text-anchor="middle">Sri's Day</text>
+</svg>

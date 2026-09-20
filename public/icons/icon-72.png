@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72">
+  <rect width="72" height="72" rx="13" fill="#4f46e5"/>
+  <circle cx="36" cy="31" r="11" fill="#fbbf24"/>
+  <text x="36" y="61" font-family="system-ui" font-weight="700" font-size="9" fill="white" text-anchor="middle">Sri's Day</text>
+</svg>
