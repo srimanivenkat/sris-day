@@ -1,7 +1,8 @@
 // ============================================
 // Google OAuth 2.0 Authentication
 // ============================================
-// Uses Google Identity Services (GIS) library for sign-in
+// Uses Google Identity Services (GIS) library for sign-in,
+// with direct OAuth redirect fallback for browsers blocking popups.
 
 import type { UserProfile } from '@/types';
 
@@ -10,6 +11,13 @@ const GIS_SCRIPT = 'https://accounts.google.com/gsi/client';
 
 // Google API client library
 const GAPI_SCRIPT = 'https://apis.google.com/js/api.js';
+
+const GOOGLE_SCOPES = [
+  'https://www.googleapis.com/auth/drive.appdata',
+  'https://www.googleapis.com/auth/calendar',
+  'https://www.googleapis.com/auth/userinfo.profile',
+  'https://www.googleapis.com/auth/userinfo.email',
+].join(' ');
 
 /** Load an external script dynamically */
 function loadScript(src: string): Promise<void> {
@@ -68,7 +76,59 @@ export async function initGoogleAuth(): Promise<void> {
   }
 }
 
-/** Sign in with Google and return user profile */
+/** Check URL hash for OAuth redirect token (e.g. #access_token=...&token_type=Bearer) */
+export async function checkRedirectToken(): Promise<UserProfile | null> {
+  if (typeof window === 'undefined') return null;
+
+  const hash = window.location.hash;
+  if (!hash || !hash.includes('access_token=')) return null;
+
+  const params = new URLSearchParams(hash.substring(1));
+  const accessToken = params.get('access_token');
+  if (!accessToken) return null;
+
+  localStorage.setItem('google_access_token', accessToken);
+  // Clean hash from URL bar
+  window.history.replaceState(null, '', window.location.pathname + window.location.search);
+
+  try {
+    const res = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    const data = await res.json();
+    const profile: UserProfile = {
+      id: data.id,
+      email: data.email,
+      name: data.name,
+      picture: data.picture,
+    };
+    localStorage.setItem('user_profile', JSON.stringify(profile));
+    localStorage.removeItem('sris_day_guest');
+    return profile;
+  } catch (err) {
+    console.error('Failed to fetch userinfo from redirect token:', err);
+    return null;
+  }
+}
+
+/** Direct full-page redirect to Google OAuth (completely bypasses popup and gsi/transform) */
+export function signInWithGoogleRedirect(): void {
+  const clientId = getGoogleClientId();
+  if (!clientId) {
+    throw new Error('Google Client ID is not configured. Please paste your Google Client ID in Settings first.');
+  }
+
+  const redirectUri = window.location.origin + '/settings';
+  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(
+    clientId
+  )}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${encodeURIComponent(
+    GOOGLE_SCOPES
+  )}&prompt=select_account`;
+
+  window.location.href = authUrl;
+}
+
+/** Sign in with Google via popup with explicit account prompt */
 export async function signInWithGoogle(): Promise<UserProfile> {
   const clientId = getGoogleClientId();
   if (!clientId) {
@@ -81,30 +141,19 @@ export async function signInWithGoogle(): Promise<UserProfile> {
     try {
       // @ts-expect-error - google global from GIS script
       if (typeof google === 'undefined' || !google?.accounts?.oauth2) {
-        reject(new Error('Google Identity Services library could not be loaded. Please check your internet connection.'));
+        // Fallback directly to full-page redirect if GIS script isn't loaded
+        signInWithGoogleRedirect();
         return;
       }
 
       // @ts-expect-error - google global from GIS script
       const client = google.accounts.oauth2.initTokenClient({
         client_id: clientId,
-        scope: 'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
-        callback: async (tokenResponse: { access_token?: string; error?: string; error_description?: string; scope?: string }) => {
-          if (!tokenResponse || tokenResponse.error || !tokenResponse.access_token) {
-            const errorMsg = tokenResponse?.error_description || tokenResponse?.error || 'Login was cancelled or access was denied.';
-            reject(new Error(errorMsg));
+        scope: GOOGLE_SCOPES,
+        callback: async (tokenResponse: { access_token: string; error?: string }) => {
+          if (tokenResponse.error) {
+            reject(new Error(tokenResponse.error));
             return;
-          }
-
-          // Check if Google Drive permission was granted
-          // @ts-expect-error - google global from GIS script
-          const hasDriveScope = typeof google !== 'undefined' && google?.accounts?.oauth2?.hasGrantedAllScopes
-            // @ts-expect-error - google global from GIS script
-            ? google.accounts.oauth2.hasGrantedAllScopes(tokenResponse, 'https://www.googleapis.com/auth/drive.appdata')
-            : tokenResponse.scope?.includes('drive.appdata');
-
-          if (!hasDriveScope) {
-            console.warn('Google Drive scope was not checked by user.');
           }
 
           // Save access token
@@ -132,7 +181,9 @@ export async function signInWithGoogle(): Promise<UserProfile> {
         },
       });
 
-      client.requestAccessToken({ prompt: 'consent' });
+      // Passing prompt: 'select_account' forces Google to show the account picker
+      // and prevents getting stuck at silent gsi/transform!
+      client.requestAccessToken({ prompt: 'select_account' });
     } catch (error) {
       reject(error);
     }

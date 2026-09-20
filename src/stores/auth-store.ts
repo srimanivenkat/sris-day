@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { UserProfile } from '@/types';
 import { 
   signInWithGoogle as googleSignIn, 
+  signInWithGoogleRedirect as googleRedirect,
+  checkRedirectToken,
   signOutGoogle, 
   getSavedProfile, 
   initGoogleAuth,
@@ -15,13 +17,14 @@ interface AuthStore {
   error: string | null;
   
   signInWithGoogle: () => Promise<void>;
+  signInWithGoogleRedirect: () => void;
   signOut: () => void;
   setGuestMode: () => void;
   setUser: (user: UserProfile) => void;
   initAuth: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthStore>((set, get) => {
+export const useAuthStore = create<AuthStore>((set) => {
   const savedProfile = typeof window !== 'undefined' ? getSavedProfile() : null;
   const isAuth = typeof window !== 'undefined' ? isAuthenticated() : false;
   const guestFlag = typeof window !== 'undefined' ? localStorage.getItem('sris_day_guest') === 'true' : false;
@@ -34,6 +37,13 @@ export const useAuthStore = create<AuthStore>((set, get) => {
     
     initAuth: async () => {
       try {
+        // Check if returning from OAuth redirect
+        const redirectProfile = await checkRedirectToken();
+        if (redirectProfile) {
+          set({ user: redirectProfile, isGuest: false });
+          return;
+        }
+
         await initGoogleAuth();
         const profile = getSavedProfile();
         if (profile) {
@@ -59,6 +69,10 @@ export const useAuthStore = create<AuthStore>((set, get) => {
         });
         throw error;
       }
+    },
+
+    signInWithGoogleRedirect: () => {
+      googleRedirect();
     },
     
     signOut: () => {

@@ -43,7 +43,7 @@ import { getGoogleClientId, setGoogleClientId } from '@/lib/google-auth';
 
 export default function SettingsPage() {
   const { theme, setTheme } = useUIStore();
-  const { user, isGuest, signInWithGoogle, signOut, error: authError } = useAuthStore();
+  const { user, isGuest, signInWithGoogle, signInWithGoogleRedirect, signOut, error: authError } = useAuthStore();
   const { isSyncing, lastSyncAt, syncToGoogleDrive, syncFromGoogleDrive, syncError, syncSuccess } = useSyncStore();
   const { config, updateConfig } = useTimerStore();
 
@@ -183,7 +183,7 @@ export default function SettingsPage() {
               </Button>
             </div>
           ) : (
-            <div className="p-4 rounded-lg border bg-card space-y-3">
+            <div className="p-4 rounded-lg border bg-card space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <p className="font-medium">Sign in with your Google Account</p>
@@ -191,11 +191,19 @@ export default function SettingsPage() {
                     Enables automated Google Drive backups and cross-device sync.
                   </p>
                 </div>
-                <Button onClick={signInWithGoogle} className="gap-2 shrink-0">
-                  <LogIn className="h-4 w-4" />
-                  Sign in with Google
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button onClick={signInWithGoogle} className="gap-2 shrink-0">
+                    <LogIn className="h-4 w-4" />
+                    Sign in with Google
+                  </Button>
+                  <Button variant="outline" onClick={signInWithGoogleRedirect} className="gap-2 shrink-0 text-xs">
+                    Direct Login (No Popup)
+                  </Button>
+                </div>
               </div>
+              <p className="text-[11px] text-muted-foreground border-t pt-2">
+                💡 <strong>Tip:</strong> If Google popup gets stuck or blocked by your browser, click <strong>"Direct Login (No Popup)"</strong>.
+              </p>
             </div>
           )}
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useUIStore } from '@/stores/ui-store';
+import { useAuthStore } from '@/stores/auth-store';
 import { initializeDatabase } from '@/lib/db';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import Sidebar from './sidebar';
@@ -20,9 +21,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     const initDb = async () => {
       try {
         await initializeDatabase();
+        await useAuthStore.getState().initAuth();
         setDbReady(true);
       } catch (error) {
-        console.error("Failed to initialize database:", error);
+        console.error("Failed to initialize database or auth:", error);
         setDbReady(true);
       }
     };
