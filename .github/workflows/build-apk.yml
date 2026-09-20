@@ -23,6 +23,8 @@ jobs:
         run: npm ci
 
       - name: Build Static Web App
+        env:
+          NEXT_PUBLIC_GOOGLE_CLIENT_ID: 1064811829288-qss7tmnvc352cdomc4cf156064dl9b2g.apps.googleusercontent.com
         run: npm run build
 
       - name: Sync Capacitor Android

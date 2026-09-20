@@ -28,10 +28,11 @@ function loadScript(src: string): Promise<void> {
   });
 }
 
+const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '1064811829288-qss7tmnvc352cdomc4cf156064dl9b2g.apps.googleusercontent.com';
+
 /** Initialize Google Identity Services */
 export async function initGoogleAuth(): Promise<void> {
-  const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-  if (!clientId || clientId === 'your-google-client-id-here.apps.googleusercontent.com') {
+  if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID === 'your-google-client-id-here.apps.googleusercontent.com') {
     console.warn('Google Client ID not configured. Running in guest mode.');
     return;
   }
@@ -47,8 +48,7 @@ export async function initGoogleAuth(): Promise<void> {
 /** Sign in with Google and return user profile */
 export function signInWithGoogle(): Promise<UserProfile> {
   return new Promise((resolve, reject) => {
-    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-    if (!clientId || clientId === 'your-google-client-id-here.apps.googleusercontent.com') {
+    if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID === 'your-google-client-id-here.apps.googleusercontent.com') {
       reject(new Error('Google Client ID not configured'));
       return;
     }
@@ -56,7 +56,7 @@ export function signInWithGoogle(): Promise<UserProfile> {
     try {
       // @ts-expect-error - google global from GIS script
       const client = google.accounts.oauth2.initTokenClient({
-        client_id: clientId,
+        client_id: GOOGLE_CLIENT_ID,
         scope: 'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
         callback: async (tokenResponse: { access_token: string; error?: string }) => {
           if (tokenResponse.error) {
