@@ -13,6 +13,7 @@ import { NAV_ITEMS } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { useAuthStore } from '@/stores/auth-store';
 
 const iconMap: Record<string, any> = {
   'layout-dashboard': LayoutDashboard,
@@ -30,6 +31,7 @@ const iconMap: Record<string, any> = {
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
+  const { user } = useAuthStore();
 
   return (
     <motion.aside
@@ -76,18 +78,28 @@ export default function Sidebar() {
         })}
       </div>
 
-      <div className="p-4 border-t flex flex-col gap-4">
-        <div className="flex items-center gap-3">
+      <div className="p-3 border-t flex flex-col gap-3">
+        <Link href="/settings" className="flex items-center gap-3 p-1.5 rounded-lg hover:bg-accent/50 transition-colors">
           <Avatar className="h-8 w-8 shrink-0">
-            <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
+            {user?.picture ? (
+              <img src={user.picture} alt={user.name} className="h-full w-full object-cover rounded-full" />
+            ) : (
+              <AvatarFallback className="text-xs bg-primary/10 text-primary font-bold">
+                {user?.name ? user.name.charAt(0).toUpperCase() : <User className="h-4 w-4" />}
+              </AvatarFallback>
+            )}
           </Avatar>
           {!collapsed && (
-            <div className="flex flex-col overflow-hidden">
-              <span className="text-sm font-medium leading-none truncate">Guest User</span>
-              <span className="text-xs text-muted-foreground mt-1 truncate">Free Plan</span>
+            <div className="flex flex-col overflow-hidden min-w-0">
+              <span className="text-sm font-medium leading-none truncate">
+                {user ? user.name : 'Guest User'}
+              </span>
+              <span className="text-xs text-muted-foreground mt-1 truncate">
+                {user ? user.email : 'Click to Sign In'}
+              </span>
             </div>
           )}
-        </div>
+        </Link>
         <Button 
           variant="ghost" 
           size="sm" 

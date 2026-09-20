@@ -5,7 +5,7 @@
 // ============================================
 // App settings: profile, theme, notifications, data management, sync
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   User,
@@ -39,6 +39,7 @@ import { useTimerStore } from '@/stores/timer-store';
 import { exportAsJSON, exportTasksAsCSV, importFromJSON } from '@/lib/export';
 import { APP_NAME, APP_VERSION } from '@/lib/constants';
 import { db } from '@/lib/db';
+import { getGoogleClientId, setGoogleClientId } from '@/lib/google-auth';
 
 export default function SettingsPage() {
   const { theme, setTheme } = useUIStore();
@@ -48,7 +49,20 @@ export default function SettingsPage() {
 
   const [exportStatus, setExportStatus] = useState<string | null>(null);
   const [importStatus, setImportStatus] = useState<string | null>(null);
+  const [clientIdInput, setClientIdInput] = useState('');
+  const [clientIdSaved, setClientIdSaved] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const saved = getGoogleClientId();
+    if (saved) setClientIdInput(saved);
+  }, []);
+
+  const handleSaveClientId = () => {
+    setGoogleClientId(clientIdInput);
+    setClientIdSaved(true);
+    setTimeout(() => setClientIdSaved(false), 3000);
+  };
 
   const handleExportJSON = async () => {
     try {
@@ -121,55 +135,105 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      {/* Profile Section */}
+      {/* Google Account & Cloud Profile */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <User className="h-4 w-4" />
-            Profile
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <User className="h-4 w-4" />
+              Google Account & Cloud Profile
+            </CardTitle>
+            {user ? (
+              <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20">
+                Connected
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="text-muted-foreground">
+                Guest Mode
+              </Badge>
+            )}
+          </div>
+          <CardDescription>
+            Connect your Gmail to sync your productivity data across laptop and mobile devices
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          {isGuest || !user ? (
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium">Guest Mode</p>
-                <p className="text-sm text-muted-foreground">
-                  Sign in with Google to sync your data across devices
-                </p>
-              </div>
-              <Button onClick={signInWithGoogle}>
-                <LogIn className="h-4 w-4 mr-2" />
-                Sign in with Google
-              </Button>
-            </div>
-          ) : (
-            <div className="flex items-center justify-between">
+        <CardContent className="space-y-4">
+          {user ? (
+            <div className="flex items-center justify-between p-3 rounded-lg border bg-accent/20">
               <div className="flex items-center gap-3">
-                {user?.picture && (
+                {user.picture ? (
                   <img
                     src={user.picture}
                     alt={user.name}
-                    className="w-10 h-10 rounded-full"
+                    className="w-11 h-11 rounded-full ring-2 ring-primary/20"
                   />
+                ) : (
+                  <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary">
+                    {user.name?.charAt(0) || 'U'}
+                  </div>
                 )}
                 <div>
-                  <p className="font-medium">{user?.name}</p>
-                  <p className="text-sm text-muted-foreground">{user?.email}</p>
+                  <p className="font-semibold text-base">{user.name}</p>
+                  <p className="text-sm text-muted-foreground">{user.email}</p>
                 </div>
               </div>
-              <Button variant="outline" onClick={signOut}>
+              <Button variant="outline" size="sm" onClick={signOut}>
                 <LogOut className="h-4 w-4 mr-2" />
                 Sign Out
               </Button>
             </div>
+          ) : (
+            <div className="p-4 rounded-lg border bg-card space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <p className="font-medium">Sign in with your Google Account</p>
+                  <p className="text-xs text-muted-foreground">
+                    Enables automated Google Drive backups and cross-device sync.
+                  </p>
+                </div>
+                <Button onClick={signInWithGoogle} className="gap-2 shrink-0">
+                  <LogIn className="h-4 w-4" />
+                  Sign in with Google
+                </Button>
+              </div>
+            </div>
           )}
+
           {authError && (
-            <div className="flex items-center gap-2 text-sm text-destructive mt-3 p-2 bg-destructive/10 rounded-md">
+            <div className="flex items-center gap-2 text-sm text-destructive p-3 bg-destructive/10 rounded-md border border-destructive/20">
               <AlertCircle className="h-4 w-4 shrink-0" />
               <span>{authError}</span>
             </div>
           )}
+
+          <Separator />
+
+          {/* Google Client ID Configurator */}
+          <div className="space-y-2 pt-1">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="clientId" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Google OAuth Client ID (Direct Setup)
+              </Label>
+              {clientIdSaved && (
+                <span className="text-xs text-green-600 font-medium">✓ Client ID Saved</span>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Paste your free Google Cloud Client ID here to connect your personal Google Drive:
+            </p>
+            <div className="flex gap-2">
+              <Input
+                id="clientId"
+                placeholder="e.g. 123456789-abcdefgh.apps.googleusercontent.com"
+                value={clientIdInput}
+                onChange={(e) => setClientIdInput(e.target.value)}
+                className="font-mono text-xs"
+              />
+              <Button variant="secondary" size="sm" onClick={handleSaveClientId} className="shrink-0">
+                Save ID
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
