@@ -32,20 +32,15 @@ function loadScript(src: string): Promise<void> {
   });
 }
 
-/** Helper to sanitize Google Client ID (removes accidental https://, http://, or trailing slashes) */
-function sanitizeClientId(id: string): string {
-  return id.replace(/^https?:\/\//i, '').replace(/\/+$/, '').trim();
-}
-
 /** Get configured Google Client ID from localStorage or environment */
 export function getGoogleClientId(): string | null {
   if (typeof window !== 'undefined') {
     const custom = localStorage.getItem('sris_day_google_client_id');
-    if (custom && custom.trim().length > 0) return sanitizeClientId(custom);
+    if (custom && custom.trim().length > 0) return custom.trim();
   }
   const envId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
   if (envId && envId !== 'your-google-client-id-here.apps.googleusercontent.com' && envId.trim().length > 0) {
-    return sanitizeClientId(envId);
+    return envId.trim();
   }
   return null;
 }
@@ -54,7 +49,7 @@ export function getGoogleClientId(): string | null {
 export function setGoogleClientId(id: string): void {
   if (typeof window !== 'undefined') {
     if (id && id.trim().length > 0) {
-      localStorage.setItem('sris_day_google_client_id', sanitizeClientId(id));
+      localStorage.setItem('sris_day_google_client_id', id.trim());
     } else {
       localStorage.removeItem('sris_day_google_client_id');
     }
@@ -93,11 +88,23 @@ export async function signInWithGoogle(): Promise<UserProfile> {
       // @ts-expect-error - google global from GIS script
       const client = google.accounts.oauth2.initTokenClient({
         client_id: clientId,
-        scope: 'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
-        callback: async (tokenResponse: { access_token: string; error?: string }) => {
-          if (tokenResponse.error) {
-            reject(new Error(tokenResponse.error));
+        scope: 'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
+        callback: async (tokenResponse: { access_token?: string; error?: string; error_description?: string; scope?: string }) => {
+          if (!tokenResponse || tokenResponse.error || !tokenResponse.access_token) {
+            const errorMsg = tokenResponse?.error_description || tokenResponse?.error || 'Login was cancelled or access was denied.';
+            reject(new Error(errorMsg));
             return;
+          }
+
+          // Check if Google Drive permission was granted
+          // @ts-expect-error - google global from GIS script
+          const hasDriveScope = typeof google !== 'undefined' && google?.accounts?.oauth2?.hasGrantedAllScopes
+            // @ts-expect-error - google global from GIS script
+            ? google.accounts.oauth2.hasGrantedAllScopes(tokenResponse, 'https://www.googleapis.com/auth/drive.appdata')
+            : tokenResponse.scope?.includes('drive.appdata');
+
+          if (!hasDriveScope) {
+            console.warn('Google Drive scope was not checked by user.');
           }
 
           // Save access token
@@ -125,7 +132,7 @@ export async function signInWithGoogle(): Promise<UserProfile> {
         },
       });
 
-      client.requestAccessToken();
+      client.requestAccessToken({ prompt: 'consent' });
     } catch (error) {
       reject(error);
     }
