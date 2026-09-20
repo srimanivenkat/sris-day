@@ -32,15 +32,20 @@ function loadScript(src: string): Promise<void> {
   });
 }
 
+/** Helper to sanitize Google Client ID (removes accidental https://, http://, or trailing slashes) */
+function sanitizeClientId(id: string): string {
+  return id.replace(/^https?:\/\//i, '').replace(/\/+$/, '').trim();
+}
+
 /** Get configured Google Client ID from localStorage or environment */
 export function getGoogleClientId(): string | null {
   if (typeof window !== 'undefined') {
     const custom = localStorage.getItem('sris_day_google_client_id');
-    if (custom && custom.trim().length > 0) return custom.trim();
+    if (custom && custom.trim().length > 0) return sanitizeClientId(custom);
   }
   const envId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
   if (envId && envId !== 'your-google-client-id-here.apps.googleusercontent.com' && envId.trim().length > 0) {
-    return envId.trim();
+    return sanitizeClientId(envId);
   }
   return null;
 }
@@ -49,7 +54,7 @@ export function getGoogleClientId(): string | null {
 export function setGoogleClientId(id: string): void {
   if (typeof window !== 'undefined') {
     if (id && id.trim().length > 0) {
-      localStorage.setItem('sris_day_google_client_id', id.trim());
+      localStorage.setItem('sris_day_google_client_id', sanitizeClientId(id));
     } else {
       localStorage.removeItem('sris_day_google_client_id');
     }
