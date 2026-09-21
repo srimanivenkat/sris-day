@@ -24,6 +24,7 @@ import {
   Info,
   CheckCircle,
   AlertCircle,
+  Copy,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -39,7 +40,7 @@ import { useTimerStore } from '@/stores/timer-store';
 import { exportAsJSON, exportTasksAsCSV, importFromJSON } from '@/lib/export';
 import { APP_NAME, APP_VERSION } from '@/lib/constants';
 import { db } from '@/lib/db';
-import { getGoogleClientId, setGoogleClientId } from '@/lib/google-auth';
+import { getGoogleClientId, setGoogleClientId, getOAuthRedirectUri } from '@/lib/google-auth';
 
 export default function SettingsPage() {
   const { theme, setTheme } = useUIStore();
@@ -51,12 +52,23 @@ export default function SettingsPage() {
   const [importStatus, setImportStatus] = useState<string | null>(null);
   const [clientIdInput, setClientIdInput] = useState('');
   const [clientIdSaved, setClientIdSaved] = useState(false);
+  const [redirectUri, setRedirectUri] = useState('');
+  const [copiedRedirect, setCopiedRedirect] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const saved = getGoogleClientId();
     if (saved) setClientIdInput(saved);
+    setRedirectUri(getOAuthRedirectUri());
   }, []);
+
+  const handleCopyRedirectUri = () => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(redirectUri);
+      setCopiedRedirect(true);
+      setTimeout(() => setCopiedRedirect(false), 2500);
+    }
+  };
 
   const handleSaveClientId = () => {
     setGoogleClientId(clientIdInput);
@@ -240,6 +252,29 @@ export default function SettingsPage() {
               <Button variant="secondary" size="sm" onClick={handleSaveClientId} className="shrink-0">
                 Save ID
               </Button>
+            </div>
+
+            {/* Redirect URI copy box to fix Error 400 redirect_uri_mismatch */}
+            <div className="p-3 bg-muted/50 rounded-lg border space-y-1.5 mt-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-foreground">
+                  Your Required Redirect URI (for Google Console):
+                </span>
+                {copiedRedirect && (
+                  <span className="text-xs text-green-500 font-medium">✓ Copied!</span>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <code className="flex-1 px-2.5 py-1.5 bg-background text-xs rounded border font-mono truncate select-all">
+                  {redirectUri || '...'}
+                </code>
+                <Button variant="outline" size="sm" onClick={handleCopyRedirectUri} className="shrink-0 text-xs h-8">
+                  <Copy className="h-3.5 w-3.5 mr-1" /> Copy URI
+                </Button>
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                👉 To fix <em>"Error 400: redirect_uri_mismatch"</em>: Open Google Cloud Console → <strong>Credentials</strong> → click your <strong>OAuth Client ID</strong> → under <strong>"Authorized redirect URIs"</strong>, paste this exact URI and click <strong>Save</strong>.
+              </p>
             </div>
           </div>
         </CardContent>

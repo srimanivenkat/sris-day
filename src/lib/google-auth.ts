@@ -111,6 +111,12 @@ export async function checkRedirectToken(): Promise<UserProfile | null> {
   }
 }
 
+/** Get the exact OAuth redirect URI that must be added to Google Cloud Console */
+export function getOAuthRedirectUri(): string {
+  if (typeof window === 'undefined') return 'http://localhost:3000/settings';
+  return window.location.origin.replace(/\/$/, '') + '/settings';
+}
+
 /** Direct full-page redirect to Google OAuth (completely bypasses popup and gsi/transform) */
 export function signInWithGoogleRedirect(): void {
   const clientId = getGoogleClientId();
@@ -118,7 +124,7 @@ export function signInWithGoogleRedirect(): void {
     throw new Error('Google Client ID is not configured. Please paste your Google Client ID in Settings first.');
   }
 
-  const redirectUri = window.location.origin + '/settings';
+  const redirectUri = getOAuthRedirectUri();
   const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(
     clientId
   )}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${encodeURIComponent(
