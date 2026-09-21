@@ -44,7 +44,7 @@ import { getGoogleClientId, setGoogleClientId, getOAuthRedirectUri } from '@/lib
 
 export default function SettingsPage() {
   const { theme, setTheme } = useUIStore();
-  const { user, isGuest, signInWithGoogle, signInWithGoogleRedirect, signOut, error: authError } = useAuthStore();
+  const { user, isGuest, signInWithGoogle, signInWithGoogleRedirect, loginWithTokenOrUrl, signOut, error: authError } = useAuthStore();
   const { isSyncing, lastSyncAt, syncToGoogleDrive, syncFromGoogleDrive, syncError, syncSuccess } = useSyncStore();
   const { config, updateConfig } = useTimerStore();
 
@@ -54,7 +54,22 @@ export default function SettingsPage() {
   const [clientIdSaved, setClientIdSaved] = useState(false);
   const [redirectUri, setRedirectUri] = useState('');
   const [copiedRedirect, setCopiedRedirect] = useState(false);
+  const [tokenInput, setTokenInput] = useState('');
+  const [isVerifyingToken, setIsVerifyingToken] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleConnectWithToken = async () => {
+    if (!tokenInput.trim()) return;
+    setIsVerifyingToken(true);
+    try {
+      await loginWithTokenOrUrl(tokenInput.trim());
+      setTokenInput('');
+    } catch {
+      // Handled in authStore
+    } finally {
+      setIsVerifyingToken(false);
+    }
+  };
 
   useEffect(() => {
     const saved = getGoogleClientId();
@@ -216,6 +231,32 @@ export default function SettingsPage() {
               <p className="text-[11px] text-muted-foreground border-t pt-2">
                 💡 <strong>Tip:</strong> If Google popup gets stuck or blocked by your browser, click <strong>"Direct Login (No Popup)"</strong>.
               </p>
+
+              {/* Direct Token / URL connector for Android APK */}
+              <div className="p-3 bg-muted/40 rounded-lg border space-y-2 mt-2">
+                <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                  📲 Complete Login via Token or Link (For Android APK)
+                </span>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  If your phone browser showed <em>"localhost refused to connect"</em>, your Google login already succeeded! Just copy that link from your Chrome URL bar and paste it below:
+                </p>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Paste the https://localhost/settings#access_token=... link here"
+                    value={tokenInput}
+                    onChange={(e) => setTokenInput(e.target.value)}
+                    className="text-xs font-mono"
+                  />
+                  <Button 
+                    size="sm" 
+                    onClick={handleConnectWithToken} 
+                    disabled={isVerifyingToken || !tokenInput.trim()}
+                    className="shrink-0 text-xs"
+                  >
+                    {isVerifyingToken ? 'Connecting...' : 'Connect'}
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
 

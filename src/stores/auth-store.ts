@@ -4,6 +4,7 @@ import {
   signInWithGoogle as googleSignIn, 
   signInWithGoogleRedirect as googleRedirect,
   checkRedirectToken,
+  authenticateWithTokenOrUrl,
   signOutGoogle, 
   getSavedProfile, 
   initGoogleAuth,
@@ -18,6 +19,7 @@ interface AuthStore {
   
   signInWithGoogle: () => Promise<void>;
   signInWithGoogleRedirect: () => void;
+  loginWithTokenOrUrl: (input: string) => Promise<void>;
   signOut: () => void;
   setGuestMode: () => void;
   setUser: (user: UserProfile) => void;
@@ -73,6 +75,21 @@ export const useAuthStore = create<AuthStore>((set) => {
 
     signInWithGoogleRedirect: () => {
       googleRedirect();
+    },
+
+    loginWithTokenOrUrl: async (input: string) => {
+      set({ isLoading: true, error: null });
+      try {
+        const profile = await authenticateWithTokenOrUrl(input);
+        set({ user: profile, isGuest: false, isLoading: false });
+      } catch (error: any) {
+        console.error('Token auth error:', error);
+        set({ 
+          isLoading: false, 
+          error: error?.message || 'Failed to authenticate with the provided token or link.' 
+        });
+        throw error;
+      }
     },
     
     signOut: () => {

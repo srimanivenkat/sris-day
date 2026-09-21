@@ -111,6 +111,38 @@ export async function checkRedirectToken(): Promise<UserProfile | null> {
   }
 }
 
+/** Parse an access token from either a full URL string or raw token string and save profile */
+export async function authenticateWithTokenOrUrl(input: string): Promise<UserProfile> {
+  let token = input.trim();
+  if (token.includes('access_token=')) {
+    const after = token.split('access_token=')[1];
+    token = after.split('&')[0];
+  }
+  if (!token) throw new Error('No valid access token found in the input.');
+
+  localStorage.setItem('google_access_token', token);
+
+  const res = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!res.ok) {
+    throw new Error('Google token validation failed. The token may have expired or is invalid.');
+  }
+
+  const data = await res.json();
+  const profile: UserProfile = {
+    id: data.id,
+    email: data.email,
+    name: data.name,
+    picture: data.picture,
+  };
+
+  localStorage.setItem('user_profile', JSON.stringify(profile));
+  localStorage.removeItem('sris_day_guest');
+  return profile;
+}
+
 /** Get the exact OAuth redirect URI that must be added to Google Cloud Console */
 export function getOAuthRedirectUri(): string {
   if (typeof window === 'undefined') return 'http://localhost:3000/settings';
